@@ -1,8 +1,7 @@
-flask
-tensorflow
+Flask
 pillow
 numpy
 opencv-python
-gunicorn
-
 gdown
+tensorflow-lite
+gunicorn

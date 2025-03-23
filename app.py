@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify
-import tensorflow as tf
+import tensorflow.lite as tflite
 from PIL import Image
 import numpy as np
 import cv2
@@ -15,12 +15,14 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger("CottonDiseaseModel")
 
 # Load model globally
-model = None
+interpreter = None
+input_details = None
+output_details = None
 class_names = ["bacterial_blight", "curl_virus", "fussarium_wilt", "healthy"]
 
 # Google Drive File ID (Extracted from the link)
 GOOGLE_DRIVE_FILE_ID = "1eXO9JIUfFWMi1IVMJxwD59laQ_XGHVYI"
-MODEL_PATH = "/tmp/cotton_disease_model.h5"  # Store model in a temporary folder on Render
+MODEL_PATH = "/tmp/cotton_disease_model.tflite"  # Store model in a temporary folder on Render
 
 def download_model():
     """Downloads the model from Google Drive using gdown."""
@@ -42,12 +44,15 @@ def download_model():
             raise Exception("Model download failed")
 
 def load_model():
-    """Loads the TensorFlow model from local storage."""
-    global model
-    if model is None:
+    """Loads the TensorFlow Lite model from local storage."""
+    global interpreter, input_details, output_details
+    if interpreter is None:
         download_model()
-        model = tf.keras.models.load_model(MODEL_PATH)
-        logger.info("Model loaded successfully.")
+        interpreter = tflite.Interpreter(model_path=MODEL_PATH)
+        interpreter.allocate_tensors()
+        input_details = interpreter.get_input_details()
+        output_details = interpreter.get_output_details()
+        logger.info("✅ TensorFlow Lite model loaded successfully.")
 
 def is_cotton_leaf(image):
     """Checks if the image is likely a cotton leaf using color, shape, and texture."""
@@ -65,11 +70,11 @@ def is_cotton_leaf(image):
 @app.route('/')
 def home():
     """Home route to check if the API is running."""
-    return "Cotton Disease Prediction API is Running!", 200
+    return "Cotton Disease Prediction API (TFLite) is Running!", 200
 
 @app.route('/predict', methods=['POST'])
 def predict():
-    """Handles image prediction."""
+    """Handles image prediction using TensorFlow Lite."""
     try:
         start_time = time.time()
         load_model()
@@ -84,10 +89,14 @@ def predict():
             return jsonify({"class": "Unknown (Not a Cotton Leaf)", "confidence": 0})
 
         image = image.resize((224, 224))
-        img_array = np.array(image) / 255.0
-        img_array = np.expand_dims(img_array, 0)
+        img_array = np.array(image, dtype=np.float32) / 255.0
+        img_array = np.expand_dims(img_array, axis=0)
 
-        predictions = model.predict(img_array)
+        # Run inference
+        interpreter.set_tensor(input_details[0]['index'], img_array)
+        interpreter.invoke()
+        predictions = interpreter.get_tensor(output_details[0]['index'])
+
         confidence = round(100 * float(np.max(predictions[0])), 2)
 
         if confidence < 75:
