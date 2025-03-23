@@ -3,7 +3,7 @@ pillow
 numpy
 opencv-python-headless 
 gdown
-tflite-runtime==2.14.0
+tensorflow
 
 
 gunicorn
