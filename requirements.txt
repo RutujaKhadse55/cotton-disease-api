@@ -3,5 +3,6 @@ pillow
 numpy
 opencv-python
 gdown
-tensorflow-lite
+tflite-runtime
+
 gunicorn
