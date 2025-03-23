@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify
-import tensorflow.lite as tflite
+import tflite_runtime.interpreter as tflite  # ✅ Corrected Import
 from PIL import Image
 import numpy as np
 import cv2
@@ -32,15 +32,15 @@ def download_model():
 
         try:
             gdown.download(gdrive_url, MODEL_PATH, quiet=False)
-            logger.info("Model downloaded successfully!")
+            logger.info("✅ Model downloaded successfully!")
 
             # Verify if model file is valid
             if os.path.getsize(MODEL_PATH) < 50000:  # Check if the file size is too small
-                logger.error("Downloaded model file is too small, possibly corrupted.")
+                logger.error("❌ Downloaded model file is too small, possibly corrupted.")
                 raise Exception("Model file may be incomplete or corrupted.")
         
         except Exception as e:
-            logger.error("Model download failed: %s", str(e))
+            logger.error("❌ Model download failed: %s", str(e))
             raise Exception("Model download failed")
 
 def load_model():
@@ -48,11 +48,15 @@ def load_model():
     global interpreter, input_details, output_details
     if interpreter is None:
         download_model()
-        interpreter = tflite.Interpreter(model_path=MODEL_PATH)
-        interpreter.allocate_tensors()
-        input_details = interpreter.get_input_details()
-        output_details = interpreter.get_output_details()
-        logger.info("✅ TensorFlow Lite model loaded successfully.")
+        try:
+            interpreter = tflite.Interpreter(model_path=MODEL_PATH)
+            interpreter.allocate_tensors()
+            input_details = interpreter.get_input_details()
+            output_details = interpreter.get_output_details()
+            logger.info("✅ TensorFlow Lite model loaded successfully.")
+        except Exception as e:
+            logger.error("❌ Error loading TensorFlow Lite model: %s", str(e))
+            raise Exception("Model load failed")
 
 def is_cotton_leaf(image):
     """Checks if the image is likely a cotton leaf using color, shape, and texture."""
@@ -63,14 +67,14 @@ def is_cotton_leaf(image):
     mask = cv2.inRange(hsv, lower_green, upper_green)
 
     green_pixels = np.sum(mask > 0) / (image_np.shape[0] * image_np.shape[1])
-    logger.debug(f"Green Pixel Ratio: {green_pixels:.2f}")
+    logger.debug(f"✅ Green Pixel Ratio: {green_pixels:.2f}")
 
     return green_pixels >= 0.15
 
 @app.route('/')
 def home():
     """Home route to check if the API is running."""
-    return "Cotton Disease Prediction API (TFLite) is Running!", 200
+    return "✅ Cotton Disease Prediction API (TFLite) is Running!", 200
 
 @app.route('/predict', methods=['POST'])
 def predict():
@@ -85,7 +89,7 @@ def predict():
         image = Image.open(request.files["file"]).convert("RGB")
 
         if not is_cotton_leaf(image):
-            logger.info("Prediction: Not a Cotton Leaf")
+            logger.info("❌ Prediction: Not a Cotton Leaf")
             return jsonify({"class": "Unknown (Not a Cotton Leaf)", "confidence": 0})
 
         image = image.resize((224, 224))
@@ -105,10 +109,10 @@ def predict():
         predicted_class = class_names[np.argmax(predictions[0])]
         end_time = time.time()
 
-        return jsonify({"class": predicted_class, "confidence": confidence, "time": end_time - start_time})
+        return jsonify({"class": predicted_class, "confidence": confidence, "time": round(end_time - start_time, 2)})
 
     except Exception as e:
-        logger.error("Prediction failed: %s", str(e))
+        logger.error("❌ Prediction failed: %s", str(e))
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
