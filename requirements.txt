@@ -3,7 +3,7 @@ pillow
 numpy
 opencv-python
 gdown
-tflite-runtime==2.5.0.post1
+tflite-runtime
 
 
 gunicorn
