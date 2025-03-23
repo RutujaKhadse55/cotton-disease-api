@@ -58,6 +58,11 @@ def is_cotton_leaf(image):
 
     return green_pixels >= 0.15
 
+@app.route('/')
+def home():
+    """Home route to check if the API is running."""
+    return "Cotton Disease Prediction API is Running!", 200
+
 @app.route('/predict', methods=['POST'])
 def predict():
     """Handles image prediction."""
@@ -92,7 +97,7 @@ def predict():
     except Exception as e:
         logger.error("Prediction failed: %s", str(e))
         return jsonify({"error": str(e)}), 500
+
 if __name__ == '__main__':
-    import os
-    port = int(os.environ.get("PORT", 10000))  # Get port dynamically
+    port = int(os.environ.get("PORT", 10000))  # Get dynamic port from Render
     app.run(host='0.0.0.0', port=port, debug=True)
