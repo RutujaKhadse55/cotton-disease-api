@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify
-import tflite_runtime.interpreter as tflite  # ✅ Corrected Import
+import tflite_runtime.interpreter as tflite  # ✅ Correct Import
 from PIL import Image
 import numpy as np
 import cv2
@@ -20,8 +20,8 @@ input_details = None
 output_details = None
 class_names = ["bacterial_blight", "curl_virus", "fussarium_wilt", "healthy"]
 
-# Google Drive File ID (Extracted from the link)
-GOOGLE_DRIVE_FILE_ID = "1eXO9JIUfFWMi1IVMJxwD59laQ_XGHVYI"
+# ✅ **Updated Google Drive File ID for New Model**
+GOOGLE_DRIVE_FILE_ID = "12hRTbIRBU0c1d8RxcCmI1J_Ae6YkgA2K"
 MODEL_PATH = "/tmp/cotton_disease_model.tflite"  # Store model in a temporary folder on Render
 
 def download_model():
@@ -74,7 +74,7 @@ def is_cotton_leaf(image):
 @app.route('/')
 def home():
     """Home route to check if the API is running."""
-    return "✅ Cotton Disease Prediction API (TFLite) is Running!", 200
+    return "✅ Cotton Disease Prediction API (TFLite) is Running with New Model!", 200
 
 @app.route('/predict', methods=['POST'])
 def predict():
