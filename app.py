@@ -27,15 +27,15 @@ MODEL_PATH = "/tmp/cotton_disease_model.tflite"  # Store model in a temporary fo
 def download_model():
     """Downloads the model from Google Drive using gdown."""
     if not os.path.exists(MODEL_PATH) or os.path.getsize(MODEL_PATH) < 50000:
-        logger.info("Downloading model from Google Drive using gdown...")
+        logger.info("📥 Downloading model from Google Drive...")
         gdrive_url = f"https://drive.google.com/uc?id={GOOGLE_DRIVE_FILE_ID}"
 
         try:
-            gdown.download(gdrive_url, MODEL_PATH, quiet=False)
+            gdown.download(gdrive_url, MODEL_PATH, fuzzy=True, quiet=False)
             logger.info("✅ Model downloaded successfully!")
 
             # Verify if model file is valid
-            if os.path.getsize(MODEL_PATH) < 50000:  # Check if the file size is too small
+            if os.path.getsize(MODEL_PATH) < 50000:  # Check if file is too small
                 logger.error("❌ Downloaded model file is too small, possibly corrupted.")
                 raise Exception("Model file may be incomplete or corrupted.")
         
@@ -59,7 +59,7 @@ def load_model():
             raise Exception("Model load failed")
 
 def is_cotton_leaf(image):
-    """Checks if the image is likely a cotton leaf using color, shape, and texture."""
+    """Checks if the image is likely a cotton leaf using color analysis."""
     image_np = np.array(image)
     hsv = cv2.cvtColor(image_np, cv2.COLOR_RGB2HSV)
     lower_green = np.array([30, 30, 30])
@@ -92,6 +92,7 @@ def predict():
             logger.info("❌ Prediction: Not a Cotton Leaf")
             return jsonify({"class": "Unknown (Not a Cotton Leaf)", "confidence": 0})
 
+        # Preprocess image for TensorFlow Lite model
         image = image.resize((224, 224))
         img_array = np.array(image, dtype=np.float32) / 255.0
         img_array = np.expand_dims(img_array, axis=0)
