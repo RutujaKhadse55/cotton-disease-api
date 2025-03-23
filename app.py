@@ -6,7 +6,7 @@ import cv2
 import logging
 import time
 import os
-import requests
+import gdown  # Import gdown for downloading from Google Drive
 
 app = Flask(__name__)
 
@@ -20,21 +20,25 @@ class_names = ["bacterial_blight", "curl_virus", "fussarium_wilt", "healthy"]
 
 # Google Drive File ID (Extracted from the link)
 GOOGLE_DRIVE_FILE_ID = "1eXO9JIUfFWMi1IVMJxwD59laQ_XGHVYI"
-MODEL_PATH = "/tmp/cotton_disease_model.h5"  # Temporary directory for Render
+MODEL_PATH = "/tmp/cotton_disease_model.h5"  # Store model in a temporary folder on Render
 
 def download_model():
-    """Downloads the model from Google Drive if not already present."""
-    if not os.path.exists(MODEL_PATH):
-        logger.info("Downloading model from Google Drive...")
+    """Downloads the model from Google Drive using gdown."""
+    if not os.path.exists(MODEL_PATH) or os.path.getsize(MODEL_PATH) < 50000:
+        logger.info("Downloading model from Google Drive using gdown...")
         gdrive_url = f"https://drive.google.com/uc?id={GOOGLE_DRIVE_FILE_ID}"
-        response = requests.get(gdrive_url, stream=True)
-        if response.status_code == 200:
-            with open(MODEL_PATH, "wb") as f:
-                for chunk in response.iter_content(1024):
-                    f.write(chunk)
+
+        try:
+            gdown.download(gdrive_url, MODEL_PATH, quiet=False)
             logger.info("Model downloaded successfully!")
-        else:
-            logger.error("Failed to download model from Google Drive")
+
+            # Verify if model file is valid
+            if os.path.getsize(MODEL_PATH) < 50000:  # Check if the file size is too small
+                logger.error("Downloaded model file is too small, possibly corrupted.")
+                raise Exception("Model file may be incomplete or corrupted.")
+        
+        except Exception as e:
+            logger.error("Model download failed: %s", str(e))
             raise Exception("Model download failed")
 
 def load_model():
