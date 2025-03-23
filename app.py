@@ -21,7 +21,7 @@ output_details = None
 class_names = ["bacterial_blight", "curl_virus", "fussarium_wilt", "healthy"]
 
 # ✅ **Updated Google Drive File ID for New Model**
-GOOGLE_DRIVE_FILE_ID = "12hRTbIRBU0c1d8RxcCmI1J_Ae6YkgA2K"
+GOOGLE_DRIVE_FILE_ID = "1-2ifYeMyaU-t_UZaG4YLLQl-GEW17Fhp"
 MODEL_PATH = "/tmp/cotton_disease_model.tflite"  # Store model in a temporary folder on Render
 
 def download_model():
